@@ -7,30 +7,19 @@ A modern, full-stack application that leverages OpenAI’s GPT to automatically 
 ## 🚀 **How It Works**
 
 1. **Paste any website URL.**
-2. **Choose the summary style** (Plain, Engaging, or Fun).
-3. **Click "Generate"** to instantly receive an AI-powered summary and a suggested brochure.
-4. **Edit the Markdown brochure** directly in your browser, or preview how it looks.
-5. **Download a clean PDF**—ready to share with clients, investors, or your team!
+2. **Click "Generate"** to instantly receive an AI-powered summary and a suggested brochure.
+3. **Edit the Markdown brochure** directly in your browser, or preview how it looks.
+4. **Download a clean PDF**—ready to share with clients, investors, or your team!
 
 ---
 
 ## 📺 **Demo Video**
 
-> **Click to watch:** > [![Demo Video](./screenshot.png)](https://link-to-your-demo.com)
->
-> _(Or drag your recording here, or upload to YouTube/Loom and link it)_
+
+https://github.com/user-attachments/assets/6c4b2147-dacc-44d9-9aa3-ac367488ed9c
 
 ---
 
-## ✨ **Features**
-
-- **Modern MUI + React Frontend:** Mobile-friendly, responsive, clean UI.
-- **Python FastAPI Backend:** Robust, async, well-structured OOP code.
-- **OpenAI GPT Integration:** Summarise and transform any website into a business-ready brochure.
-- **Markdown Editor:** Edit and preview the brochure before exporting.
-- **PDF Export:** One-click, ready-to-share PDF downloads.
-- **Automatic Company Name Detection:** (Planned) — keep the UI minimal and smart!
-- **Error handling:** Handles network/LLM/website failures gracefully.
 
 ---
 
@@ -39,7 +28,7 @@ A modern, full-stack application that leverages OpenAI’s GPT to automatically 
 - **Frontend:** React, TypeScript, Material UI, React-Markdown, html2pdf.js
 - **Backend:** FastAPI, Python, OpenAI API, BeautifulSoup, Requests
 - **PDF Generation:** html2pdf.js (frontend)
-- **AI Model:** OpenAI GPT-3.5 or GPT-4o
+- **AI Model:** OpenAI GPT-3.5 
 
 ---
 
@@ -66,14 +55,6 @@ npm run dev
 
 - The frontend will run at `http://localhost:5173`
 - The backend will run at `http://127.0.0.1:8000`
-
----
-
-## 🖼️ **Screenshots**
-
-| Home/URL Entry      | Brochure Editor/Preview | PDF Download        |
-| ------------------- | ----------------------- | ------------------- |
-| ![](./screens1.png) | ![](./screens2.png)     | ![](./screens3.png) |
 
 ---
 
