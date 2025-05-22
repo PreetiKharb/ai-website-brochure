@@ -1,0 +1,36 @@
+# ---- Python (FastAPI backend) ----
+*.pyc
+__pycache__/
+.env
+.env.*
+*.sqlite3
+*.db
+.vscode/
+.venv/
+venv/
+# PyCharm
+.idea/
+# Test & coverage
+.coverage
+htmlcov/
+dist/
+build/
+# PDF outputs
+*.pdf
+
+# ---- Node/React frontend ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+build/
+dist/
+.env
+.env.*
+
+# ---- OS Files ----
+.DS_Store
+Thumbs.db
+
+# ---- Misc ----
+*.log
