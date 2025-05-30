@@ -27,7 +27,9 @@ A modern, full-stack application that leverages OpenAI’s GPT to automatically 
 
 ## 📺 **Demo Video**
 
-https://github.com/user-attachments/assets/6c4b2147-dacc-44d9-9aa3-ac367488ed9c
+
+https://github.com/user-attachments/assets/742c7859-03ed-48c1-8fa9-940f1f7b83e5
+
 
 ---
 
