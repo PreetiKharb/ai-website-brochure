@@ -7,6 +7,10 @@ import {
   Card,
   Stack,
   CircularProgress,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 
 import ReactMarkdown from "react-markdown";
@@ -18,22 +22,29 @@ import html2pdf from "html2pdf.js";
 interface BrochureRequest {
   url: string;
   title?: string;
+  lang: string;
 }
 
 export default function BrochurePage() {
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
   const [markdown, setMarkdown] = useState<string>("");
-  const [summary, setSummary] = useState<string>("");
   const [loadingBrochure, setLoadingBrochure] = useState(false);
-  const [loadingSummary, setLoadingSummary] = useState(false);
 
+  const [selectedLanguage, setSelectedLanguage] = useState("en"); // 'en' for English
+
+  // Language display names
+  const languages = [
+    { code: "en", label: "English" },
+    { code: "hi", label: "Hindi" },
+    { code: "es", label: "Spanish" },
+  ];
   // Generate Brochure Markdown
   const handleGenerateBrochure = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoadingBrochure(true);
     setMarkdown("");
-    const body: BrochureRequest = { url, title };
+    const body: BrochureRequest = { url, title, lang: selectedLanguage };
     const resp = await fetch("http://127.0.0.1:8000/brochure", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -42,19 +53,6 @@ export default function BrochurePage() {
     const data = await resp.json();
     setMarkdown(data.markdown);
     setLoadingBrochure(false);
-  };
-
-  // Get Summary
-  const handleShowSummary = async () => {
-    setLoadingSummary(true);
-    const resp = await fetch("http://127.0.0.1:8000/summarise", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
-    const data = await resp.json();
-    setSummary(data.summary);
-    setLoadingSummary(false);
   };
 
   // PDF Download from Markdown preview
@@ -103,6 +101,21 @@ export default function BrochurePage() {
                 onChange={(e) => setTitle(e.target.value)}
                 sx={{ maxWidth: 400, width: "100%" }}
               />
+              <FormControl sx={{ maxWidth: 400, width: "100%" }}>
+                <InputLabel id="lang-select-label">Language</InputLabel>
+                <Select
+                  labelId="lang-select-label"
+                  value={selectedLanguage}
+                  label="Language"
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                >
+                  {languages.map((lang) => (
+                    <MenuItem value={lang.code} key={lang.code}>
+                      {lang.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               <Button
                 type="submit"
                 variant="contained"
@@ -111,32 +124,9 @@ export default function BrochurePage() {
               >
                 {loadingBrochure ? <CircularProgress size={20} /> : "Generate"}
               </Button>
-              <Button
-                onClick={handleShowSummary}
-                variant="outlined"
-                disabled={loadingSummary || !url}
-                sx={{ maxWidth: 400, width: "100%" }}
-              >
-                {loadingSummary ? (
-                  <CircularProgress size={16} />
-                ) : (
-                  "Show Summary"
-                )}
-              </Button>
             </Stack>
           </form>
         </Card>
-
-        {summary && (
-          <Card sx={{ mb: 3, p: 3, background: "#f5f5f7" }}>
-            <Typography variant="h6" mb={1}>
-              Summary
-            </Typography>
-            <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
-              {summary}
-            </Typography>
-          </Card>
-        )}
 
         {markdown && (
           <Card sx={{ mb: 4, p: 3 }}>

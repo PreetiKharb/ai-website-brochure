@@ -1,107 +1,148 @@
+import os
 import requests
+import json
+from typing import Dict, Any
+from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import openai
+import re
 
-class WebsiteSummariser:
-    def __init__(self, url: str, model="gpt-3.5-turbo"):
+from prompts import (
+    system_prompt_links,
+    system_prompt_brochure,
+    get_links_user_prompt,
+    get_brochure_user_prompt
+)
+
+# --- Environment & Config ---
+load_dotenv(override=True)
+api_key = os.getenv('OPENAI_API_KEY')
+
+if not (api_key and api_key.startswith('sk-') and len(api_key) > 10):
+    raise RuntimeError("OpenAI API key is missing or looks invalid.")
+
+openai.api_key = api_key
+MODEL = 'gpt-4o-mini'
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"
+    )
+}
+
+# --- Web Scraping ---
+
+class Website:
+    """Represents a scraped website with content and links."""
+
+    def __init__(self, url: str):
         self.url = url
-        self.model = model
+        self.title, self.text, self.links = self._scrape(url)
 
-    def extract_text(self) -> str:
-        """Extracts and cleans main content from website."""
-        headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/122.0.0.0 Safari/537.36"
-            )
-        }
-        page = requests.get(self.url, headers= headers)
-        soup = BeautifulSoup(page.text, "html.parser")
-        for tag in soup(["nav", "footer", "header", "script", "style", "noscript"]):
-            tag.decompose()
-        text = soup.get_text(separator="\n", strip=True)
-        # Filter out very short lines (likely to be boilerplate)
-        lines = [line for line in text.splitlines() if len(line.strip()) > 40]
-        return "\n".join(lines)
+    def _scrape(self, url: str):
+        try:
+            response = requests.get(url, headers=HEADERS, timeout=10)
+            response.raise_for_status()
+        except Exception as e:
+            print(f"Failed to fetch {url}: {e}")
+            return "No title found", "", []
 
-    def split_chunks(self, text: str, max_tokens=2000) -> list:
-        """Splits text into chunks for LLM context window."""
-        max_chars = max_tokens * 4  # approx 1 token = 4 chars
-        lines = text.split('\n')
-        chunks, chunk = [], ""
-        for line in lines:
-            if len(chunk) + len(line) + 1 > max_chars:
-                chunks.append(chunk)
-                chunk = ""
-            chunk += line + "\n"
-        if chunk.strip():
-            chunks.append(chunk)
-        return chunks
+        soup = BeautifulSoup(response.content, 'html.parser')
+        title = soup.title.string.strip() if soup.title else "No title found"
+        if soup.body:
+            for irrelevant in soup.body(["script", "style", "img", "input"]):
+                irrelevant.decompose()
+            text = soup.body.get_text(separator="\n", strip=True)
+        else:
+            text = ""
+        links = [link.get('href') for link in soup.find_all('a') if link.get('href')]
+        return title, text, links
 
-    def summarise_chunk(self, chunk: str) -> str:
-        """Summarises a single chunk using OpenAI."""
-        prompt = (
-            f"Summarise the following website content. "
-            "Focus on the key information and ignore irrelevant details:\n\n"
-            f"{chunk}"
-        )
-        
-        response = openai.ChatCompletion.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that summarises website content."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=300,
-            temperature=0.5,
-        )
-        return response["choices"][0]["message"]["content"]
+    def get_contents(self) -> str:
+        return f"Webpage Title:\n{self.title}\nWebpage Contents:\n{self.text}\n\n"
 
-    def summarise(self) -> str:
-        """Full pipeline: extract, chunk, summarise recursively."""
-        text = self.extract_text()
-        chunks = self.split_chunks(text)
-        summaries = [self.summarise_chunk(chunk) for chunk in chunks]
-        if len(summaries) > 1:
-            combined = "\n\n".join(summaries)
-            return self.summarise_chunk(combined)
-        return summaries[0] if summaries else "Could not extract main content."
-    @staticmethod
-    def get_brochure_user_prompt(company_name, url, details):
-        user_prompt = f"""
-        You are a world-class copywriter.
-        Create a beautiful 1-page brochure in Markdown for a company called "{company_name}".
-        Use the following extracted website content to infer their mission, offering, value proposition, and what makes them unique.
+# --- Helper Functions ---
 
-        Company Name: {company_name}
-        Website: {url}
+def links_to_markdown(links_json: Dict[str, Any]) -> str:
+    """Convert extracted links into a Markdown section."""
+    if not links_json.get("links"):
+        return ""
+    lines = ["## Useful Links\n"]
+    for link in links_json["links"]:
+        display_name = link.get("type", "Link").replace("_", " ").title()
+        url = link.get("url", "")
+        lines.append(f"- [{display_name}]({url})")
+    return "\n".join(lines)
 
-        Website Content:
-        {details}
+def get_links(url: str) -> Dict[str, Any]:
+    website = Website(url)
+    response = openai.ChatCompletion.create(
+        model=MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt_links()},
+            {"role": "user", "content": get_links_user_prompt(website)},
+        ],
+        response_format={"type": "json_object"}
+    )
+    result = response.choices[0].message.content
+    return json.loads(result)
 
-        Your brochure should include sections:
-        - About Us
-        - What We Offer
-        - Why Choose Us
-        - (and any other relevant sections you infer)
-        Format it as Markdown. Make it concise, engaging, and professional.
-        """
-        # Optionally, truncate details if too long
-        if len(user_prompt) > 6000:
-            user_prompt = user_prompt[:6000]
-        return user_prompt
+def get_all_details(url: str) -> str:
+    """Aggregate landing and relevant pages, append pretty Markdown links."""
+    result = "Landing page:\n"
+    main_site = Website(url)
+    result += main_site.get_contents()
+    links = get_links(url)
+    for link in links.get("links", []):
+        result += f"\n\n{link['type']}\n"
+        result += Website(link["url"]).get_contents()
+    result += "\n\n" + links_to_markdown(links)
+    return result
 
-    def generate_brochure_markdown(self, company_name, url):
-        details = self.extract_text()
-        prompt = self.get_brochure_user_prompt(company_name, url, details)
-        # Call OpenAI with this prompt
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=900,
-            temperature=0.6,
-        )
-        return response.choices[0].message.content
+def create_brochure(company_name: str, url: str, lang: str) -> str:
+    """Call OpenAI to create the brochure markdown."""
+    all_details = get_all_details(url)
+    response = openai.ChatCompletion.create(
+        model=MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt_brochure()},
+            {"role": "user", "content": get_brochure_user_prompt(company_name, url, lang, all_details)},
+        ],
+    )
+    result = response.choices[0].message.content
+    markdown = strip_code_block(result)
+    # Step 2: Translate if needed
+    if lang != "en":
+        markdown = translate_text(markdown, lang)
+    return markdown
+
+def strip_code_block(text: str) -> str:
+    """Remove ```json ... ``` or ```markdown ... ``` blocks if present."""
+    pattern = r"^```(?:\w+\n)?(.*)```$"
+    match = re.match(pattern, text.strip(), re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return text.strip()
+
+def translate_text(text, target_lang):
+    language_map = {
+        "en": "English",
+        "hi": "Hindi",
+        "es": "Spanish"
+    }
+    language_str = language_map.get(target_lang, "English")
+    prompt = (
+        f"Translate the following text to {language_str}:\n\n{text}\n\n"
+        "Respond only with the translated text."
+    )
+    response = openai.ChatCompletion.create(
+        model=MODEL,
+        messages=[
+            {"role": "system", "content": "You are a helpful translation assistant."},
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=1200,
+        temperature=0.2
+    )
+    return response.choices[0].message.content.strip()

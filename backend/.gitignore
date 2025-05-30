@@ -7,7 +7,7 @@ __pycache__/
 *.db
 .vscode/
 .venv/
-venv/
+summariserenv/
 # PyCharm
 .idea/
 # Test & coverage

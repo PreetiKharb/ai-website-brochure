@@ -7,19 +7,29 @@ A modern, full-stack application that leverages OpenAI’s GPT to automatically 
 ## 🚀 **How It Works**
 
 1. **Paste any website URL.**
-2. **Click "Generate"** to instantly receive an AI-powered summary and a suggested brochure.
-3. **Edit the Markdown brochure** directly in your browser, or preview how it looks.
-4. **Download a clean PDF**—ready to share with clients, investors, or your team!
+2. **Choose your language** (English, Hindi, Spanish, more coming soon!).
+3. **Click "Generate"** to instantly receive an AI-powered summary and a suggested brochure.
+4. **Edit the Markdown brochure** directly in your browser, or preview how it looks.
+5. **Download a clean PDF**—ready to share with clients, investors, or your team!
 
 ---
 
-## 📺 **Demo Video**
+## 🌏 **Language Support**
 
+- **Generate summaries and brochures in multiple languages:**
+
+  - English (default)
+  - Hindi
+  - Spanish(Want more? Add your favorite in a PR!)
+
+- **How?**
+  - We first generate in English using GPT, then automatically translate to your selected language with a second AI call for best accuracy.
+
+## 📺 **Demo Video**
 
 https://github.com/user-attachments/assets/6c4b2147-dacc-44d9-9aa3-ac367488ed9c
 
 ---
-
 
 ---
 
@@ -28,7 +38,7 @@ https://github.com/user-attachments/assets/6c4b2147-dacc-44d9-9aa3-ac367488ed9c
 - **Frontend:** React, TypeScript, Material UI, React-Markdown, html2pdf.js
 - **Backend:** FastAPI, Python, OpenAI API, BeautifulSoup, Requests
 - **PDF Generation:** html2pdf.js (frontend)
-- **AI Model:** OpenAI GPT-3.5 
+- **AI Model:** OpenAI GPT-3.5 / GPT-4o (configurable)
 
 ---
 
@@ -64,7 +74,7 @@ npm run dev
 2. **Frontend sends request to FastAPI backend.**
 3. **Backend scrapes and cleans the website content.**
 4. **Content is chunked and sent to OpenAI for recursive summarisation.**
-5. **Brochure is generated in Markdown by OpenAI.**
+5. **Brochure is generated in Markdown by OpenAI (in English), then translated if needed.**
 6. **Frontend displays editable Markdown and preview.**
 7. **User can download a PDF version instantly.**
 
